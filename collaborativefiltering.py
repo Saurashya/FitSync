@@ -79,6 +79,34 @@ class UserBasedCollaborativeFiltering:
         else:
             return 1
 
+    def _calculate_rest_time(self, intensity, calories):
+        """
+        Calculate the rest time between sets based on intensity and calories burned.
+        
+        Parameters:
+        - intensity: The exercise intensity value (1–10 scale or similar).
+        - calories: The number of calories burned during the exercise.
+        
+        Returns:
+        - Rest time in seconds (minimum 20 seconds, maximum 300 seconds).
+        """
+        # Base rest time determined by intensity
+        if intensity >= 8:
+            base_rest = 110  # High intensity
+        elif intensity >= 6:
+            base_rest = 80
+        elif intensity >= 4:
+            base_rest = 50
+        elif intensity >= 2:
+            base_rest = 20
+        else:
+            base_rest = 10
+
+        # Adjust rest time based on calories burned (higher calories -> longer rest)
+        additional_rest = min(180, calories // 10)  # Add up to 3 minutes max
+
+        return min(300, base_rest + additional_rest)
+
     def recommend_exercises(self, user_id):
         """
         Recommend exercises for the given user based on similar users' exercises and include calorie information.
@@ -87,7 +115,7 @@ class UserBasedCollaborativeFiltering:
         - user_id: The ID of the user for whom to recommend exercises.
         
         Returns:
-        - recommended_exercises: A list of tuples with the format (exercise_name, calories_burned, sets).
+        - recommended_exercises: A list of tuples with the format (exercise_name, calories_burned, sets, rest_time).
         """
         if self.similarity_matrix is None:
             raise ValueError("Similarity matrix not computed. Call compute_similarity() first.")
@@ -106,7 +134,8 @@ class UserBasedCollaborativeFiltering:
         unique_exercises = {}
         for exercise, calories, intensity in recommended_exercises:
             sets = self._calculate_sets(intensity)
-            unique_exercises[exercise] = (calories, sets)
+            rest_time = self._calculate_rest_time(intensity, calories)
+            unique_exercises[exercise] = (calories, sets, rest_time)
 
         # Ensure at least 5 exercises by adding frequent exercises if necessary
         if len(unique_exercises) < 5:
@@ -117,13 +146,15 @@ class UserBasedCollaborativeFiltering:
                     avg_calories = self.user_data[self.user_data['Exercise'] == ex]['Calories Burn'].mean()
                     avg_intensity = self.user_data[self.user_data['Exercise'] == ex]['Exercise Intensity'].mean()
                     sets = self._calculate_sets(avg_intensity if not np.isnan(avg_intensity) else 0)
+                    rest_time = self._calculate_rest_time(avg_intensity if not np.isnan(avg_intensity) else 0, avg_calories if not np.isnan(avg_calories) else 0)
                     unique_exercises[ex] = (
                         avg_calories if not np.isnan(avg_calories) else 0,
-                        sets
+                        sets,
+                        rest_time
                     )
 
         # Convert back to a list of tuples
-        recommended_exercises = [(ex, cal, sets) for ex, (cal, sets) in unique_exercises.items()]
+        recommended_exercises = [(ex, cal, sets, rest) for ex, (cal, sets, rest) in unique_exercises.items()]
 
         return recommended_exercises[:5]
 
@@ -152,3 +183,43 @@ class UserBasedCollaborativeFiltering:
             recommended_exercises.extend(additional_exercises)
 
         return recommended_exercises[:5]
+
+    def predict_fitness_score(self, user_id, feature_column, top_n=5):
+            """
+            Predict a user's fitness score (e.g., Calories Burned or Exercise Intensity) based on similar users.
+            """
+            top_similar_users = self.get_top_n_similar_users(user_id, n=top_n)
+
+            # Get the original data for the similar users
+            similar_user_ids = [user for user, _ in top_similar_users]
+            similar_users_data = self.user_data[self.user_data['ID'].isin(similar_user_ids)]
+
+            # Calculate the weighted average of the feature column based on similarity scores
+            weights = np.array([score for _, score in top_similar_users])
+            feature_values = similar_users_data[feature_column].values
+            predicted_value = np.dot(weights, feature_values) / np.sum(weights)
+
+            return predicted_value
+        
+        # Get a Summary of the User's Fitness Profile
+    def get_user_profile_summary(self, user_id):
+        """
+        Return a summary of a user's profile (e.g., average Calories Burned, Heart Rate, BMI, etc.).
+        Converts values to standard Python types (float, int) for better display.
+        """
+        user_profile = self.user_data[self.user_data['ID'] == user_id].squeeze()
+
+        if user_profile.empty:
+            return f"No user found with ID {user_id}"
+
+        # Convert to native Python types (float, int) for better readability
+        summary = {
+            "Calories Burned": float(user_profile["Calories Burn"]),
+            "Dream Weight": float(user_profile["Dream Weight"]),
+            "Actual Weight": float(user_profile["Actual Weight"]),
+            "Age": int(user_profile["Age"]),
+            "Heart Rate": int(user_profile["Heart Rate"]),
+            "BMI": float(user_profile["BMI"]),
+            "Exercise Intensity": int(user_profile["Exercise Intensity"])
+        }
+        return summary

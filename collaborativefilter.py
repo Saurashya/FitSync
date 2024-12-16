@@ -95,8 +95,8 @@ def streamlit_dashboard(df):
                 # Recommend exercises for a user
                 recommended_exercises = ucf.recommend_exercises(user_id=selected_user_id)    
                 st.markdown(f"#### Recommended Exercises for User {selected_user_id}:")
-                for exercise, calories, sets in recommended_exercises:
-                    st.markdown(f"- **{exercise}**: {math.floor(calories)} calories burned, Sets: {sets}")
+                for exercise, calories, sets, rest_time in recommended_exercises:
+                    st.markdown(f"- **{exercise}**: {math.floor(calories)} calories burned, Sets: {sets}, Rest Time: {rest_time} seconds")
             
             elif selected_choice == "User Fitness Score":
                 # Predict a fitness score for a user
