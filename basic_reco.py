@@ -132,27 +132,6 @@ def get_recommended_exercises_intensity(df, intensity_category, duration):
 
     return recommended_exercises
 
-# Function to save recommendations to an HTML file
-def save_recommendations_to_html(recommendations, output_file):
-    """
-    Saves the recommendations to an HTML file.
-
-    Parameters:
-    - recommendations: List of recommended exercises or message.
-    - output_file: The name of the HTML file to save the results.
-    """
-    if isinstance(recommendations, list):
-        # Convert the recommendations to a DataFrame for better formatting
-        df = pd.DataFrame({'Recommended Exercises': recommendations})
-        html_content = df.to_html(index=False)
-    else:
-        # If recommendations is a string, wrap it in HTML tags
-        html_content = f"<html><body><p>{recommendations}</p></body></html>"
-
-    # Write the HTML content to a file
-    with open(output_file, 'w') as f:
-        f.write(html_content)
-
 # Streamlit Dashboard
 def streamlit_dashboard(df):
     st.title("Basic Exercise Recommendations")
@@ -211,16 +190,8 @@ def streamlit_dashboard(df):
                 st.write(f"Recommended Exercises for {selected_gender}, Age {age}, BMI Category {selected_bmi_category}:")
                 for exercise in recommended_exercises:
                     st.write(f"- {exercise}")
-                # Save to HTML
-                output_file = "age_bmi_recommendations.html"
-                save_recommendations_to_html(recommended_exercises, output_file)
-                st.success(f"Recommendations have been saved to {output_file}")
             else:
                 st.write(recommended_exercises)
-                # Save to HTML
-                output_file = "age_bmi_recommendations.html"
-                save_recommendations_to_html(recommended_exercises, output_file)
-                st.success(f"Recommendations have been saved to {output_file}")
 
         elif selected_choice == "Recommended Exercises by Intensity":
             recommended_exercises = get_recommended_exercises_intensity(df, selected_intensity_category, duration)
@@ -228,16 +199,8 @@ def streamlit_dashboard(df):
                 st.write(f"Recommended Exercises for {selected_intensity_category} Intensity Category with <= {duration} min duration:")
                 for exercise in recommended_exercises:
                     st.write(f"- {exercise}")
-                # Save to HTML
-                output_file = "intensity_recommendations.html"
-                save_recommendations_to_html(recommended_exercises, output_file)
-                st.success(f"Recommendations have been saved to {output_file}")
             else:
                 st.write(recommended_exercises)
-                # Save to HTML
-                output_file = "intensity_recommendations.html"
-                save_recommendations_to_html(recommended_exercises, output_file)
-                st.success(f"Recommendations have been saved to {output_file}")
 
 # Main function to set up the dashboard
 def app():
