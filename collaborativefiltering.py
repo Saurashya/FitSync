@@ -17,7 +17,7 @@ class UserBasedCollaborativeFiltering:
 
         numerical_columns = ['Calories Burn', 'Dream Weight', 'Actual Weight', 'Age', 'Duration', 'Heart Rate', 'BMI', 'Exercise Intensity']
 
-        preprocessor=DataPreprocessing(self.user_data, categorical_columns, numerical_columns)
+        preprocessor = DataPreprocessing(self.user_data, categorical_columns, numerical_columns)
         self.processed_data = preprocessor.preprocess_data()
 
     def compute_similarity(self):
@@ -32,7 +32,6 @@ class UserBasedCollaborativeFiltering:
         self.similarity_matrix = cosine_similarity(self.processed_data.drop(columns=['ID']))
         print("User similarity matrix computed.")
         return self.similarity_matrix
-
 
     def get_top_n_similar_users(self, user_id, n=5):
         """
@@ -84,18 +83,24 @@ class UserBasedCollaborativeFiltering:
             recommended_exercises.extend(similar_user_exercises)
 
         # Remove duplicates from the recommendation list
-        # Create a dictionary to ensure unique exercise names with their calorie values
         unique_exercises = {}
         for exercise, calories in recommended_exercises:
             unique_exercises[exercise] = calories
-        
+
+        # Ensure at least 5 exercises by adding frequent exercises if necessary
+        if len(unique_exercises) < 5:
+            all_exercises = self.user_data['Exercise'].value_counts().index.tolist()
+            for ex in all_exercises:
+                if ex not in unique_exercises:
+                    # Calculate the average calories burned for this exercise
+                    avg_calories = self.user_data[self.user_data['Exercise'] == ex]['Calories Burn'].mean()
+                    unique_exercises[ex] = avg_calories if not np.isnan(avg_calories) else 0
+
         # Convert back to a list of tuples
         recommended_exercises = list(unique_exercises.items())
-        return recommended_exercises
 
+        return recommended_exercises[:5]
 
-
-    # Recommend Exercises Based on Similar Users
     def get_exercise_recommendations(self, user_id, top_n_similar_users=5):
         """
         Recommend exercises to a user based on exercises performed by similar users.
@@ -107,8 +112,13 @@ class UserBasedCollaborativeFiltering:
         # Get the most frequent exercises performed by similar users
         recommended_exercises = similar_users_data['Exercise'].value_counts().index.tolist()
 
-        return recommended_exercises[:top_n_similar_users]
-    
+        # Ensure at least 5 exercises by adding frequent exercises from all users if necessary
+        if len(recommended_exercises) < 5:
+            all_exercises = self.user_data['Exercise'].value_counts().index.tolist()
+            additional_exercises = [ex for ex in all_exercises if ex not in recommended_exercises]
+            recommended_exercises.extend(additional_exercises)
+
+        return recommended_exercises[:5]
 
     def predict_fitness_score(self, user_id, feature_column, top_n=5):
         """
@@ -126,8 +136,7 @@ class UserBasedCollaborativeFiltering:
         predicted_value = np.dot(weights, feature_values) / np.sum(weights)
 
         return predicted_value
-    
-    # Get a Summary of the User's Fitness Profile
+
     def get_user_profile_summary(self, user_id):
         """
         Return a summary of a user's profile (e.g., average Calories Burned, Heart Rate, BMI, etc.).
