@@ -30,7 +30,7 @@ class RecommendationModel:
             param={'k': 10, 'min_k': 1, 'sim_options': {'name': 'cosine', 'user_based': True}}
             model = KNNBasic(param)
         else:
-            raise ValueError("Invalid method. Choose 'SVD' or 'ALS' or 'KNN'")
+            raise ValueError("Invalid method. Choose 'SVD', 'ALS', or 'KNN'")
         
         model.fit(trainset)
         return model, testset
@@ -80,7 +80,6 @@ class ModelEvaluation:
 def optimize_hyperparameters(data, algorithm='SVD'):
 
     if algorithm == 'SVD':
-
         # Define the parameter grid for SVD
         param_grid = {
             'n_factors': [20, 30, 50, 100],
@@ -94,7 +93,6 @@ def optimize_hyperparameters(data, algorithm='SVD'):
         grid_search.fit(data)
     
     elif algorithm == 'KNN':
-
         # Define the param_grid for KNN
         param_grid = {
             'k': [10, 20, 30],
@@ -118,9 +116,7 @@ def optimize_hyperparameters(data, algorithm='SVD'):
     print(f'Best parameters: {grid_search.best_params["rmse"]}')
 
 
-
 def plot_metrics(models, mae, rmse, mse, precision_at_5):
-
     # Define positions for bars
     x = np.arange(len(models))
 

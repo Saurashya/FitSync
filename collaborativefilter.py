@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 from collaborativefiltering import UserBasedCollaborativeFiltering
 import math
+from recommendation_model import RecommendationModel, prepare_data
 
 # Constants for the dashboard
 TITLE_ICON = ":bar_chart:"
@@ -51,6 +52,10 @@ def streamlit_dashboard(df):
         feature_column = ['Calories Burn', 'Dream Weight', 'Duration', 'Heart Rate', 'BMI', 'Exercise Intensity']
         selected_feature_column = st.selectbox("Feature:", options=feature_column)
 
+    # Dropdown for selecting recommendation algorithm
+    algorithm_options = ['SVD', 'KNN', 'ALS']
+    selected_algorithm = st.selectbox("Select Recommendation Algorithm:", options=algorithm_options)
+
     st.divider()
 
     # Initialize the User-Based Collaborative Filtering class
@@ -92,11 +97,13 @@ def streamlit_dashboard(df):
                     st.markdown(f"- **User {user}**, Similarity Score: {score:.3f}")
             
             elif selected_choice == "Recommended Exercises":
-                # Recommend exercises for a user
-                recommended_exercises = ucf.recommend_exercises(user_id=selected_user_id)    
+                # Recommend exercises for a user using the selected algorithm
+                recommendation_model = RecommendationModel(prepare_data(df))
+                model, _ = recommendation_model.train_model(method=selected_algorithm)
+                recommended_exercises = ucf.recommend_exercises(user_id=selected_user_id, algorithm=selected_algorithm)    
                 st.markdown(f"#### Recommended Exercises for User {selected_user_id}:")
-                for exercise, calories, sets in recommended_exercises:
-                    st.markdown(f"- **{exercise}**: {math.floor(calories)} calories burned, Sets: {sets}")
+                for exercise, calories, sets, rest_time in recommended_exercises:
+                    st.markdown(f"- **{exercise}**: {math.floor(calories)} calories burned, Sets: {sets}, Rest Time: {rest_time} seconds")
             
             elif selected_choice == "User Fitness Score":
                 # Predict a fitness score for a user
