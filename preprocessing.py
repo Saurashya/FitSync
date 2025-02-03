@@ -9,27 +9,26 @@ def load_data(file_path, file_name):
 class DataPreprocessing:
     def __init__(self, dataframe, categorical_columns, numerical_columns):
         self.data = dataframe
-        self.categorical_columns=categorical_columns
-        self.numerical_columns=numerical_columns
+        self.categorical_columns = categorical_columns
+        self.numerical_columns = numerical_columns
     
     def check_missing_values(self):
         print(self.data.isnull().sum())
 
     def handle_missing_values(self, strategy="mean"):
         if strategy == "mean":
-            return self.data.fillna(self.data.mean())
+            self.data[self.numerical_columns] = self.data[self.numerical_columns].apply(pd.to_numeric, errors='coerce').fillna(self.data[self.numerical_columns].mean())
         elif strategy == "median":
-            return self.data.fillna(self.data.median())
+            self.data[self.numerical_columns] = self.data[self.numerical_columns].apply(pd.to_numeric, errors='coerce').fillna(self.data[self.numerical_columns].median())
         elif strategy == "mode":
-            return self.data.fillna(self.data.mode().iloc[0])
+            self.data[self.numerical_columns] = self.data[self.numerical_columns].apply(pd.to_numeric, errors='coerce').fillna(self.data[self.numerical_columns].mode().iloc[0])
         elif strategy == "imputer":
             # Imputing missing values (if any) with the mean for numerical columns
             imputer = SimpleImputer(strategy='mean')
-            self.data[self.numerical_columns] = imputer.fit_transform(
-                self.data[self.numerical_columns]
-                )            
+            self.data[self.numerical_columns] = imputer.fit_transform(self.data[self.numerical_columns])
         else:
             raise ValueError("Unsupported strategy. Use 'mean', 'median', 'mode' or 'imputer'.")
+        return self.data
             
     def encode_categorical_columns(self):
         # If categorical columns are provided, ensure they are encoded
@@ -43,7 +42,7 @@ class DataPreprocessing:
 
     def preprocess_data(self):
         self.check_missing_values()
-        # self.handle_missing_values()
+        self.handle_missing_values()
         self.encode_categorical_columns()
         self.scale_numerical_features()
         return self.data
