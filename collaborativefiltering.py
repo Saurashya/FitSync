@@ -51,10 +51,15 @@ class UserBasedCollaborativeFiltering:
 
         # Get the similarity scores for the given user
         user_similarity_scores = self.similarity_matrix[user_idx]
+        print(f"Similarity scores for user {user_id}:")
+        print(user_similarity_scores)
         
         # Get top-N similar users (excluding the current user)
         similar_users = np.argsort(user_similarity_scores)[::-1][1:]  # Sort in descending order and exclude itself
         similar_users = [(int(self.user_data.iloc[user]['ID']), float(user_similarity_scores[user])) for user in similar_users]
+        
+        print(f"Top {n} similar users for user {user_id}:")
+        print(similar_users[:n])
         
         return similar_users[:n]
 
@@ -108,6 +113,10 @@ class UserBasedCollaborativeFiltering:
         # Convert back to a list of tuples
         recommended_exercises = [(ex, cal, sets, rest) for ex, (cal, sets, rest) in unique_exercises.items()]
 
+        print(f"Recommended exercises for user {user_id}:")
+        for exercise in recommended_exercises:
+            print(exercise)
+        
         return recommended_exercises[:5]
 
     def _calculate_sets(self, intensity):
